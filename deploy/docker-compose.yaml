@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 services:
   bark-server:
     image: finab/bark-server
@@ -8,3 +8,9 @@ services:
       - ./data:/data
     ports:
       - "8080:8080"
+
+          LH4T9V5U4R",
+          TeamID: "5U8LBRXG3A",
+
+                    hms_appId     = "103303219"
+                    hms_appSecret = "ba39ea5e5cf07bd7bea12d8c8db23e74a40c0747ac81870ce9a5a1e1188a7076"

@@ -1,0 +1,41 @@
+package route
+
+import (
+	"bark-server/misc"
+	"bark-server/orm"
+	"runtime"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+func init() {
+	registerRoute("misc", func(router *fiber.App) {
+		// ping func only returns a "pong" string, usually used to test server response
+		router.Get("/ping", func(c *fiber.Ctx) error {
+			return c.JSON(CommonResp{
+				Code:      200,
+				Message:   "pong",
+				Timestamp: time.Now().Unix(),
+			})
+		})
+
+		// healthz func only returns a "ok" string, similar to ping func,
+		// healthz func is usually used for health check
+		router.Get("/healthz", func(c *fiber.Ctx) error {
+			return c.SendString("ok")
+		})
+
+		// info func returns information about the server version
+		router.Get("/info", func(c *fiber.Ctx) error {
+			devices, _ := orm.CountDevice()
+			return c.JSON(map[string]interface{}{
+				"version": misc.Version,
+				"build":   misc.BuildDate,
+				"arch":    runtime.GOOS + "/" + runtime.GOARCH,
+				"commit":  misc.CommitID,
+				"devices": devices,
+			})
+		})
+	})
+}

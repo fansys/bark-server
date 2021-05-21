@@ -35,5 +35,5 @@ Print version.`,
 }
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	// rootCmd.AddCommand(versionCmd)
 }
