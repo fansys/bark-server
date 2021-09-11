@@ -1,0 +1,32 @@
+# Server listen address
+addr: 0.0.0.0:8080
+# Server data storage dir
+data: data
+# Server TLS certificate
+cert: ''
+# Server TLS certificate key
+key: ''
+# Enable HTTP URL case sensitive
+case-sensitive: false
+# Enable strict routing distinction
+strict-routing: false
+# Aggressively reduces memory usage at the cost of higher CPU usage if set to true
+reduce-memory-usage: false
+# Basic auth username
+user: ''
+# Basic auth password
+password: ''
+# The remote IP address used by the bark server http header
+proxy-header: ''
+# Maximum number of concurrent connections 256*1024
+concurrency: 262144
+# The amount of time allowed to read the full request, including the body
+read-timeout: 3s
+# The maximum duration before timing out writes of the response
+write-timeout: 3s
+# The maximum amount of time to wait for the next request when keep-alive is enabled
+idle-timeout: 10s
+getui:
+  app-id: ''
+  app-key: ''
+  master-secret: ''

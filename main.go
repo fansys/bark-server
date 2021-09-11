@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fansys/bark-server/v2/orm"
+	"fansys/bark-server/v2/push/getui"
 	"fmt"
+	"github.com/urfave/cli/v2/altsrc"
 	"os"
 	"os/signal"
 	"syscall"
@@ -21,106 +24,29 @@ var (
 	commitID  string
 )
 
+const (
+	ConfigName    = "config"
+	DefaultConfig = "config.yml"
+)
+
 func main() {
 	app := &cli.App{
 		Name:    "bark-server",
 		Usage:   "Push Server For Bark",
 		Version: fmt.Sprintf("%s %s %s", version, commitID, buildDate),
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:    "addr",
-				Usage:   "Server listen address",
-				EnvVars: []string{"BARK_SERVER_ADDRESS"},
-				Value:   "0.0.0.0:8080",
-			},
-			&cli.StringFlag{
-				Name:    "data",
-				Usage:   "Server data storage dir",
-				EnvVars: []string{"BARK_SERVER_DATA_DIR"},
-				Value:   "/data",
-			},
-			&cli.StringFlag{
-				Name:    "cert",
-				Usage:   "Server TLS certificate",
-				EnvVars: []string{"BARK_SERVER_CERT"},
-				Value:   "",
-			},
-			&cli.StringFlag{
-				Name:    "key",
-				Usage:   "Server TLS certificate key",
-				EnvVars: []string{"BARK_SERVER_KEY"},
-				Value:   "",
-			},
-			&cli.BoolFlag{
-				Name:    "case-sensitive",
-				Usage:   "Enable HTTP URL case sensitive",
-				EnvVars: []string{"BARK_SERVER_CASE_SENSITIVE"},
-				Value:   false,
-			},
-			&cli.BoolFlag{
-				Name:    "strict-routing",
-				Usage:   "Enable strict routing distinction",
-				EnvVars: []string{"BARK_SERVER_STRICT_ROUTING"},
-				Value:   false,
-			},
-			&cli.BoolFlag{
-				Name:    "reduce-memory-usage",
-				Usage:   "Aggressively reduces memory usage at the cost of higher CPU usage if set to true",
-				EnvVars: []string{"BARK_SERVER_REDUCE_MEMORY_USAGE"},
-				Value:   false,
-			},
-			&cli.StringFlag{
-				Name:    "user",
-				Usage:   "Basic auth username",
-				EnvVars: []string{"BARK_SERVER_BASIC_AUTH_USER"},
-				Value:   "",
-			},
-			&cli.StringFlag{
-				Name:    "password",
-				Usage:   "Basic auth password",
-				EnvVars: []string{"BARK_SERVER_BASIC_AUTH_PASSWORD"},
-				Value:   "",
-			},
-			&cli.StringFlag{
-				Name:    "proxy-header",
-				Usage:   "The remote IP address used by the bark server http header",
-				EnvVars: []string{"BARK_SERVER_PROXY_HEADER"},
-				Value:   "",
-			},
-			&cli.IntFlag{
-				Name:    "concurrency",
-				Usage:   "Maximum number of concurrent connections",
-				EnvVars: []string{"BARK_SERVER_CONCURRENCY"},
-				Value:   256 * 1024,
-				Hidden:  true,
-			},
-			&cli.DurationFlag{
-				Name:    "read-timeout",
-				Usage:   "The amount of time allowed to read the full request, including the body",
-				EnvVars: []string{"BARK_SERVER_READ_TIMEOUT"},
-				Value:   3 * time.Second,
-				Hidden:  true,
-			},
-			&cli.DurationFlag{
-				Name:    "write-timeout",
-				Usage:   "The maximum duration before timing out writes of the response",
-				EnvVars: []string{"BARK_SERVER_WRITE_TIMEOUT"},
-				Value:   3 * time.Second,
-				Hidden:  true,
-			},
-			&cli.DurationFlag{
-				Name:    "idle-timeout",
-				Usage:   "The maximum amount of time to wait for the next request when keep-alive is enabled",
-				EnvVars: []string{"BARK_SERVER_IDLE_TIMEOUT"},
-				Value:   10 * time.Second,
-				Hidden:  true,
-			},
-		},
+		Before:  altsrc.InitInputSourceWithContext(flags, altsrc.NewYamlSourceFromFlagFunc(ConfigName)),
+		Flags:   flags,
 		Authors: []*cli.Author{
 			{Name: "mritd", Email: "mritd@linux.com"},
 			{Name: "Finb", Email: "to@day.app"},
 		},
 		Action: func(c *cli.Context) error {
+			getui.New(getui.Config{
+				AppId:        c.String("getui.app-id"),
+				AppKey:       c.String("getui.app-key"),
+				MasterSecret: c.String("getui.master-secret"),
+			})
+			orm.New(c.String("data"))
 			fiberApp := fiber.New(fiber.Config{
 				ServerHeader:      "Bark",
 				CaseSensitive:     c.Bool("case-sensitive"),
@@ -147,7 +73,6 @@ func main() {
 
 			routerAuth(c.String("user"), c.String("password"), fiberApp)
 			routerSetup(fiberApp)
-			bboltSetup(c.String("data"))
 
 			go func() {
 				sigs := make(chan os.Signal)
@@ -156,9 +81,6 @@ func main() {
 					logger.Warn("Received a termination signal, bark server shutdown...")
 					if err := fiberApp.Shutdown(); err != nil {
 						logger.Errorf("Server forced to shutdown error: %v", err)
-					}
-					if err := db.Close(); err != nil {
-						logger.Errorf("Database close error: %v", err)
 					}
 				}
 			}()

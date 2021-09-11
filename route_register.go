@@ -1,17 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"fansys/bark-server/v2/orm"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mritd/logger"
-	"go.etcd.io/bbolt"
-	"github.com/lithammer/shortuuid/v3"
 )
 
 type DeviceInfo struct {
 	DeviceKey   string `form:"device_key,omitempty" json:"device_key,omitempty" xml:"device_key,omitempty" query:"device_key,omitempty"`
 	DeviceToken string `form:"device_token,omitempty" json:"device_token,omitempty" xml:"device_token,omitempty" query:"device_token,omitempty"`
+	DeviceType  string `form:"device_type,omitempty" json:"device_type,omitempty" xml:"device_type,omitempty" query:"device_type,omitempty"`
 
 	// compatible with old req
 	OldDeviceKey   string `form:"key,omitempty" json:"key,omitempty" xml:"key,omitempty" query:"key,omitempty"`
@@ -58,19 +57,7 @@ func doRegister(c *fiber.Ctx, compat bool) error {
 		}
 	}
 
-	err := db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(bucketName))
-
-		// If the deviceKey is empty or the corresponding deviceToken cannot be obtained from the database,
-		// it is considered as a new device registration
-		if deviceInfo.DeviceKey == "" || bucket.Get([]byte(deviceInfo.DeviceKey)) == nil {
-			// Generate a new UUID as the deviceKey when a new device register
-			deviceInfo.DeviceKey = shortuuid.New()
-		}
-
-		// update the deviceToken
-		return bucket.Put([]byte(deviceInfo.DeviceKey), []byte(deviceInfo.DeviceToken))
-	})
+	device, err := orm.SaveDevice(deviceInfo.DeviceKey, deviceInfo.DeviceToken, deviceInfo.DeviceType)
 
 	if err != nil {
 		logger.Errorf("device registration failed: %v", err)
@@ -79,9 +66,10 @@ func doRegister(c *fiber.Ctx, compat bool) error {
 
 	return c.Status(200).JSON(data(map[string]string{
 		// compatible with old resp
-		"key":          deviceInfo.DeviceKey,
-		"device_key":   deviceInfo.DeviceKey,
-		"device_token": deviceInfo.DeviceToken,
+		"key":          device.DeviceKey,
+		"device_key":   device.DeviceKey,
+		"device_token": device.DeviceToken,
+		"device_type":  device.DeviceType,
 	}))
 }
 
@@ -92,12 +80,7 @@ func doRegisterCheck(c *fiber.Ctx) error {
 		return c.Status(400).JSON(failed(400, "device key is empty"))
 	}
 
-	err := db.View(func(tx *bbolt.Tx) error {
-		if bs := tx.Bucket([]byte(bucketName)).Get([]byte(deviceKey)); bs == nil {
-			return fmt.Errorf("device not registered")
-		}
-		return nil
-	})
+	_, err := orm.GetDeviceByKey(deviceKey)
 	if err != nil {
 		return c.Status(400).JSON(failed(400, err.Error()))
 	}

@@ -1,15 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"fansys/bark-server/v2/orm"
+	apns2 "fansys/bark-server/v2/push/apns"
+	"fansys/bark-server/v2/push/getui"
+	"github.com/mritd/logger"
 	"net/url"
 	"strings"
 
-	"github.com/finb/bark-server/v2/apns"
-
 	"github.com/gofiber/fiber/v2"
-
-	"go.etcd.io/bbolt"
 )
 
 func init() {
@@ -35,13 +34,12 @@ func init() {
 
 func routeDoPush(c *fiber.Ctx, compat bool) error {
 	// default value
-	msg := apns.PushMessage{
+	msg := orm.PushMessage{
 		Category:  "myNotificationCategory",
 		Body:      "NoContent",
 		Sound:     "1107",
 		ExtParams: make(map[string]interface{}),
 	}
-
 	// always parse body(Lowest priority)
 	if err := c.BodyParser(&msg); err != nil && err != fiber.ErrUnprocessableEntity {
 		return c.Status(400).JSON(failed(400, "request bind failed: %v", err))
@@ -60,13 +58,12 @@ func routeDoPush(c *fiber.Ctx, compat bool) error {
 		// parse multipartForm values
 		form, err := c.Request().MultipartForm()
 		if err == nil {
-			for key,val := range form.Value {
-				if len(val) > 0{
+			for key, val := range form.Value {
+				if len(val) > 0 {
 					params[key] = val[0]
 				}
 			}
 		}
-
 
 		for key, val := range params {
 			switch strings.ToLower(string(key)) {
@@ -121,21 +118,23 @@ func routeDoPush(c *fiber.Ctx, compat bool) error {
 		return c.Status(400).JSON(failed(400, "device key is empty"))
 	}
 
-	err := db.View(func(tx *bbolt.Tx) error {
-		if bs := tx.Bucket([]byte(bucketName)).Get([]byte(msg.DeviceKey)); bs == nil {
-			return fmt.Errorf("failed to get [%s] device token from database", msg.DeviceKey)
-		} else {
-			msg.DeviceToken = string(bs)
-			return nil
-		}
-	})
+	device, err := orm.GetDeviceByKey(msg.DeviceKey)
 	if err != nil {
 		return c.Status(400).JSON(failed(400, "failed to get device token: %v", err))
 	}
-
-	err = apns.Push(&msg)
+	msg.DeviceToken = device.DeviceToken
+	msg.DeviceType = device.DeviceType
+	orm.SaveMessage(&msg)
+	logger.Infof("bark push message, device key: %v, token: %v", device.DeviceKey, device.DeviceToken)
+	if device.DeviceType == "ios" {
+		err = apns2.Push(&msg)
+	} else {
+		err = getui.Push(&msg)
+	}
 	if err != nil {
+		logger.Errorf("bark push message, device key: %v, error: %v", device.DeviceKey, err)
 		return c.Status(500).JSON(failed(500, "push failed: %v", err))
 	}
+	logger.Infof("bark push message success, device key: %v", device.DeviceKey)
 	return c.JSON(success())
 }

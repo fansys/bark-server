@@ -1,8 +1,8 @@
 FROM golang:1.16-alpine AS builder
 
-COPY . /go/src/github.com/finb/bark-server
+COPY . /go/src/fansys/bark-server
 
-WORKDIR /go/src/github.com/finb/bark-server
+WORKDIR /go/src/fansys/bark-server
 
 RUN set -ex \
     && apk add git gcc libc-dev \
@@ -28,10 +28,11 @@ RUN set -ex \
     && apk upgrade \
     && apk add --no-cache ca-certificates
 
-COPY --from=builder /go/bin/bark-server /usr/local/bin/bark-server
+COPY --from=builder /go/bin/bark-server /opt/bark-server
+COPY --from=builder /go/src/fansys/bark-server/config.yml /opt/config.yml
 
-VOLUME /data
+VOLUME /opt
 
 EXPOSE 8080
 
-CMD ["bark-server"]
+CMD ["/opt/bark-server"]

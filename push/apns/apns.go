@@ -3,6 +3,7 @@ package apns
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fansys/bark-server/v2/orm"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -15,18 +16,6 @@ import (
 	"github.com/sideshow/apns2/token"
 	"golang.org/x/net/http2"
 )
-
-type PushMessage struct {
-	DeviceToken string `form:"-" json:"-" xml:"-" query:"-"`
-	DeviceKey   string `form:"device_key,omitempty" json:"device_key,omitempty" xml:"device_key,omitempty" query:"device_key,omitempty"`
-	Category    string `form:"category,omitempty" json:"category,omitempty" xml:"category,omitempty" query:"category,omitempty"`
-	Title       string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty" query:"title,omitempty"`
-	Body        string `form:"body,omitempty" json:"body,omitempty" xml:"body,omitempty" query:"body,omitempty"`
-	// ios notification sound(system sound please refer to http://iphonedevwiki.net/index.php/AudioServices)
-	Sound       string `form:"sound,omitempty" json:"sound,omitempty" xml:"sound,omitempty" query:"sound,omitempty"`
-	Group       string `form:"group,omitempty" json:"group,omitempty" xml:"group,omitempty" query:"group,omitempty"`
-	ExtParams map[string]interface{} `form:"ext_params,omitempty" json:"ext_params,omitempty" xml:"ext_params,omitempty" query:"ext_params,omitempty"`
-}
 
 const (
 	topic  = "me.fin.bark"
@@ -73,10 +62,10 @@ func init() {
 		},
 		Host: apns2.HostProduction,
 	}
-	logger.Info("init apns client success...")
+	logger.Info("init Apns push client success...")
 }
 
-func Push(msg *PushMessage) error {
+func Push(msg *orm.PushMessage) error {
 	pl := payload.NewPayload().
 		AlertTitle(msg.Title).
 		AlertBody(msg.Body).

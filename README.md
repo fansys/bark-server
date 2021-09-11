@@ -2,7 +2,7 @@
 
 <img src="https://wx3.sinaimg.cn/mw690/0060lm7Tly1g0nfnjjxbbj30sg0sg757.jpg" width=200px height=200px />
 
-[Bark](https://github.com/Finb/Bark) is an iOS App which allows you to push customed notifications to your iPhone.
+[Bark](https://fansys/Bark) is an iOS App which allows you to push customed notifications to your iPhone.
 
 
 ## Table of Contents
@@ -43,7 +43,7 @@ docker-compose up -d
 
 ### For General User 
 
-- 1、Download precompiled binaries from the [releases](https://github.com/Finb/bark-server/releases) page
+- 1、Download precompiled binaries from the [releases](https://fansys/bark-server/releases) page
 - 2、Add executable permissions to the bark-server binary: `chmod +x bark-server`
 - 3、Start bark-server: `./bark-server --addr 0.0.0.0:8080 --data ./bark-data`
 - 4、Test the server: `curl localhost:8080/ping`
