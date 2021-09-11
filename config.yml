@@ -27,6 +27,6 @@ write-timeout: 3s
 # The maximum amount of time to wait for the next request when keep-alive is enabled
 idle-timeout: 10s
 getui:
-  app-id: ''
-  app-key: ''
-  master-secret: ''
+  app-id: ZQsM3yEvRF7FGRluEi8gj3
+  app-key: dQL1MyoFnHAnL7pvP3gA82
+  master-secret: Ok7GTtwcig9V63XB9rwQa2
