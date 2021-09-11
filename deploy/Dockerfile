@@ -31,7 +31,7 @@ RUN set -ex \
 COPY --from=builder /go/bin/bark-server /opt/bark-server
 COPY --from=builder /go/src/fansys/bark-server/config.yml /opt/config.yml
 
-VOLUME /opt
+WORKDIR /opt
 
 EXPOSE 8080
 
