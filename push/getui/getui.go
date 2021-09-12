@@ -58,6 +58,9 @@ func New(config Config) {
 }
 
 func Push(msg *orm.PushMessage) error {
+	if msg.Title == "" {
+		msg.Title = "Bard"
+	}
 	pl := getui2.NewPayload().
 		AlertTitle(msg.Title).
 		AlertBody(msg.Body).
