@@ -3,9 +3,7 @@ package orm
 import (
 	"errors"
 	"fansys/bark-server/v2/util"
-	"github.com/lithammer/shortuuid/v3"
 	"github.com/mritd/logger"
-	"strings"
 )
 
 func GetDeviceByKey(deviceKey string) (*Device, error) {
@@ -74,5 +72,5 @@ func CountDevice() int {
 }
 
 func genKey() string {
-	return strings.ToLower(shortuuid.New())
+	return "f" + util.NewShotId()
 }
